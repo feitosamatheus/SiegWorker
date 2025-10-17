@@ -32,12 +32,12 @@ O projeto é estruturado em camadas seguindo a **Clean Architecture** para garan
 **Motivos para a Escolha:**
 
   * **Integridade e Transações:** Essencial para operações críticas como *upsert* de documentos e atualizações consistentes, garantindo **Atomicidade** e **Isolamento** (ACID).
-  * **Modelagem Relacional para Consultas:** A natureza tabular dos documentos fiscais e a necessidade de consulta por múltiplos filtros (`CNPJ`, `UF`, `Data`, `Chave do Documento`) são ideais para índices e *queries* eficientes em SQL Server.
+  * **Modelagem Relacional para Consultas:** A natureza tabular dos documentos fiscais e a necessidade de consulta por múltiplos filtros (`CNPJ`, `UF`, `Data`) são ideais para índices e *queries* eficientes em SQL Server.
   * **Ecossistema .NET Maduro:** Suporte robusto e otimizado via **EF Core / Migrations**.
 
 ### 2\. Idempotência e Reprocessamento
 
-  * **Estratégia:** Garantida por **chave única** (`Documento.Chave` ou *hash* do XML normalizado) com **índice *unique*** no SQL Server.
+  * **Estratégia:** Garantida por **chave única** (*hash* do XML) com **índice *unique*** no SQL Server.
   * **Funcionamento:** Ao receber o mesmo evento mais de uma vez, a operação de *upsert* (feita via `Unit of Work` e `Repository`) evita a duplicação. O sistema confirma o estado atual ou realiza uma atualização, tratando reprocessamentos de forma segura.
 
 ### 3\. Resiliência no Consumo do RabbitMQ 
