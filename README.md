@@ -1,6 +1,9 @@
 ﻿
 # ⚙️ SiegWorker - Processador de Documentos Fiscais
 
+🔗 Repositório Api: `https://github.com/feitosamatheus/SiegApi` 
+🔗 Repositório Service: `https://github.com/feitosamatheus/SiegWorker` 
+
 O **SiegWorker** é um microserviço **.NET** (Worker Service) que atua como a camada de **processamento assíncrono** e persistência de **documentos fiscais** (NFe/CTe/NFSe).
 
 Ele **consome eventos** do **RabbitMQ** (publicados pelo projeto `Sieg.Api`), **persiste/atualiza dados** em **SQL Server**, aplica **idempotência** para evitar duplicidades e implementa **resiliência** (retries, *exponential backoff* e DLQ).
