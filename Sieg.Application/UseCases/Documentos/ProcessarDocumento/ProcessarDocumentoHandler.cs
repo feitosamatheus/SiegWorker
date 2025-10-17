@@ -59,7 +59,6 @@ public sealed class ProcessarDocumentoHandler : IRequestHandler<ProcessarDocumen
             if(xmlConteudo == null)
                 throw new XmlInvalidoException("Conteúdo do XML não encontrado");
 
-
             using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xmlConteudo));
             var xmlDocument = await LerECriarXmlDocumentAsync(stream);
             var tipoDocumento = _detectorDocumentoFiscalService.Detectar(xmlDocument);

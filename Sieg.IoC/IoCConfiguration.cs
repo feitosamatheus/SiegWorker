@@ -66,7 +66,6 @@ public static class IoCConfiguration
             new ArmazenamentoService(sp.GetRequiredService<IAmazonS3>(), bucketName)
         );
 
-
         return services;
     }
 }
