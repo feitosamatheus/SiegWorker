@@ -18,6 +18,7 @@ public sealed class Documento : EntidadeBase
 
     public ICollection<DocumentoFiscal> DocumentosFiscais { get; private set; } = new List<DocumentoFiscal>();
 
+    private Documento() { }
     public Documento(string nomeOriginalArquivo, string caminhoXml, long tamanho, string xmlConteudo)
     {
         NomeOriginalArquivo = nomeOriginalArquivo;
