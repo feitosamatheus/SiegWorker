@@ -1,90 +1,91 @@
+ï»¿
+# âš™ï¸ SiegWorker - Processador de Documentos Fiscais
 
-# ?? SiegWorker - Processador de Documentos Fiscais
+O **SiegWorker** Ã© um microserviÃ§o **.NET** (Worker Service) que atua como a camada de **processamento assÃ­ncrono** e persistÃªncia de **documentos fiscais** (NFe/CTe/NFSe).
 
-O **SiegWorker** é um microserviço **.NET** (Worker Service) que atua como a camada de **processamento assíncrono** e persistência de **documentos fiscais** (NFe/CTe/NFSe).
+Ele **consome eventos** do **RabbitMQ** (publicados pelo projeto `Sieg.Api`), **persiste/atualiza dados** em **SQL Server**, aplica **idempotÃªncia** para evitar duplicidades e implementa **resiliÃªncia** (retries, *exponential backoff* e DLQ).
 
-Ele **consome eventos** do **RabbitMQ** (publicados pelo projeto `Sieg.Api`), **persiste/atualiza dados** em **SQL Server**, aplica **idempotência** para evitar duplicidades e implementa **resiliência** (retries, *exponential backoff* e DLQ).
-
-?? **Repositório:** [github.com/feitosamatheus/SiegWorker](https://www.google.com/search?q=https://github.com/feitosamatheus/SiegWorker)
+ğŸ”— **RepositÃ³rio:** [github.com/feitosamatheus/SiegWorker](https://www.google.com/search?q=https://github.com/feitosamatheus/SiegWorker)
 
 -----
 
-## ??? Arquitetura (Clean Architecture)
+## ğŸ›ï¸ Arquitetura (Clean Architecture)
 
-O projeto é estruturado em camadas seguindo a **Clean Architecture** para garantir separação de responsabilidades, testabilidade e adaptabilidade.
+O projeto Ã© estruturado em camadas seguindo a **Clean Architecture** para garantir separaÃ§Ã£o de responsabilidades, testabilidade e adaptabilidade.
 
 **Camadas principais:**
 
-| Camada | Responsabilidade Principal | Relação com o Desafio |
+| Camada | Responsabilidade Principal | RelaÃ§Ã£o com o Desafio |
 | :--- | :--- | :--- |
-| **Domain** | Entidades, objetos de valor e regras de negócio. | Representa a estrutura dos documentos fiscais. |
-| **Application** | Casos de uso (**Commands/Handlers**), validações e DTOs. | Orquestra a persistência e a lógica de processamento. |
-| **Infrastructure** | Persistência (**EF Core**), repositórios e **Unit of Work**. | Implementa acesso ao SQL Server e EF Core. |
-| **IoC** | Registro de dependências e *Composition Root*. | Configuração central de dependências. |
-| **ConsumerWorker** | Worker que consome mensagens do **RabbitMQ** e orquestra o processamento. | Implementa a Resiliência e Idempotência (itens 7 e 8). |
+| **Domain** | Entidades, objetos de valor e regras de negÃ³cio. | Representa a estrutura dos documentos fiscais. |
+| **Application** | Casos de uso (**Commands/Handlers**), validaÃ§Ãµes e DTOs. | Orquestra a persistÃªncia e a lÃ³gica de processamento. |
+| **Infrastructure** | PersistÃªncia (**EF Core**), repositÃ³rios e **Unit of Work**. | Implementa acesso ao SQL Server e EF Core. |
+| **IoC** | Registro de dependÃªncias e *Composition Root*. | ConfiguraÃ§Ã£o central de dependÃªncias. |
+| **ConsumerWorker** | Worker que consome mensagens do **RabbitMQ** e orquestra o processamento. | Implementa a ResiliÃªncia e IdempotÃªncia (itens 7 e 8). |
 
 -----
 
-## ??? Decisões de Arquitetura e Modelagem
+## ğŸ› ï¸ DecisÃµes de Arquitetura e Modelagem
 
-### 1\. Persistência de Dados: SQL Server (Relacional)
+### 1\. PersistÃªncia de Dados: SQL Server (Relacional)
 
 **Motivos para a Escolha:**
 
-  * **Integridade e Transações:** Essencial para operações críticas como *upsert* de documentos e atualizações consistentes, garantindo **Atomicidade** e **Isolamento** (ACID).
-  * **Modelagem Relacional para Consultas:** A natureza tabular dos documentos fiscais e a necessidade de consulta por múltiplos filtros (`CNPJ`, `UF`, `Data`, `Chave do Documento` - *Item 4 do Desafio*) são ideais para índices e *queries* eficientes em SQL Server.
+  * **Integridade e TransaÃ§Ãµes:** Essencial para operaÃ§Ãµes crÃ­ticas como *upsert* de documentos e atualizaÃ§Ãµes consistentes, garantindo **Atomicidade** e **Isolamento** (ACID).
+  * **Modelagem Relacional para Consultas:** A natureza tabular dos documentos fiscais e a necessidade de consulta por mÃºltiplos filtros (`CNPJ`, `UF`, `Data`, `Chave do Documento` - *Item 4 do Desafio*) sÃ£o ideais para Ã­ndices e *queries* eficientes em SQL Server.
   * **Ecossistema .NET Maduro:** Suporte robusto e otimizado via **EF Core / Migrations**.
 
-### 2\. Idempotência e Reprocessamento
+### 2\. IdempotÃªncia e Reprocessamento
 
-  * **Estratégia:** Garantida por **chave única** (`Documento.Chave` ou *hash* do XML normalizado) com **índice *unique*** no SQL Server.
-  * **Funcionamento:** Ao receber o mesmo evento mais de uma vez, a operação de *upsert* (feita via `Unit of Work` e `Repository`) evita a duplicação. O sistema confirma o estado atual ou realiza uma atualização, tratando reprocessamentos de forma segura.
+  * **EstratÃ©gia:** Garantida por **chave Ãºnica** (`Documento.Chave` ou *hash* do XML normalizado) com **Ã­ndice *unique*** no SQL Server.
+  * **Funcionamento:** Ao receber o mesmo evento mais de uma vez, a operaÃ§Ã£o de *upsert* (feita via `Unit of Work` e `Repository`) evita a duplicaÃ§Ã£o. O sistema confirma o estado atual ou realiza uma atualizaÃ§Ã£o, tratando reprocessamentos de forma segura.
 
-### 3\. Resiliência no Consumo do RabbitMQ 
+### 3\. ResiliÃªncia no Consumo do RabbitMQ 
 
-  * **Estratégia:** O **ConsumerWorker** implementa um fluxo de consumo robusto utilizando:
-      * **Retries:** Tentativas de reprocessamento em caso de falhas transitórias.
+  * **EstratÃ©gia:** O **ConsumerWorker** implementa um fluxo de consumo robusto utilizando:
+      * **Retries:** Tentativas de reprocessamento em caso de falhas transitÃ³rias.
       * ***Exponential Backoff***: Aumento exponencial do tempo de espera entre as retentativas para evitar sobrecarga no *broker* e no banco de dados.
-      * **DLQ (*Dead Letter Queue*)**: Após esgotadas as tentativas de *retry*, a mensagem é enviada para uma fila de falha permanente para análise manual e evitar que o consumidor *crash* em loop.
+      * **DLQ (*Dead Letter Queue*)**: ApÃ³s esgotadas as tentativas de *retry*, a mensagem Ã© enviada para uma fila de falha permanente para anÃ¡lise manual e evitar que o consumidor *crash* em loop.
 
-### 4\. Tratamento de Dados Sensíveis 
+### 4\. Tratamento de Dados SensÃ­veis 
 
-  * **Dados Considerados Sensíveis:** CNPJ ou qualquer informação que possa identificar uma pessoa ou empresa.
-  * **Práticas Adotadas:**
-      * **Criptografia em Repouso:** A *Connection String* do SQL Server deve ser configurada para usar criptografia (TLS/SSL) ou, em um ambiente Cloud (AWS), as variáveis de ambiente/Secrets Manager são utilizadas.
-      * **Filtragem/Anonimização:** Em logs (que não estão no escopo direto do `SiegWorker`, mas são uma boa prática), os dados sensíveis devem ser mascarados ou removidos antes do *sink*.
-      * **Controle de Acesso:** O `SiegWorker` opera sob um princípio de privilégio mínimo para acessar apenas os recursos necessários (SQL Server e RabbitMQ).
+  * **Dados Considerados SensÃ­veis:** CNPJ ou qualquer informaÃ§Ã£o que possa identificar uma pessoa ou empresa.
+  * **PrÃ¡ticas Adotadas:**
+      * **Criptografia em Repouso:** A *Connection String* do SQL Server deve ser configurada para usar criptografia (TLS/SSL) ou, em um ambiente Cloud (AWS), as variÃ¡veis de ambiente/Secrets Manager sÃ£o utilizadas.
+      * **Filtragem/AnonimizaÃ§Ã£o:** Em logs (que nÃ£o estÃ£o no escopo direto do `SiegWorker`, mas sÃ£o uma boa prÃ¡tica), os dados sensÃ­veis devem ser mascarados ou removidos antes do *sink*.
+      * **Controle de Acesso:** O `SiegWorker` opera sob um princÃ­pio de privilÃ©gio mÃ­nimo para acessar apenas os recursos necessÃ¡rios (SQL Server e RabbitMQ).
 
 -----
 
-## ? Requisitos e Setup
+## âœ… Requisitos e Setup
 
   * **`.NET SDK 8+`** 
-  * **SQL Server** e **RabbitMQ** já provisionados na AWS (endpoints acessíveis pela rede do worker, utilizando configurações/variáveis de ambiente).
-### ?? Configuração de Acesso (Credenciais)
+  * **SQL Server** e **RabbitMQ** jÃ¡ provisionados na AWS (endpoints acessÃ­veis pela rede do worker, utilizando configuraÃ§Ãµes/variÃ¡veis de ambiente).
+### âš ï¸ ConfiguraÃ§Ã£o de Acesso (Credenciais)
 
-Antes de executar, você **deve** garantir que as credenciais do ambiente estão configuradas. O projeto lê as seguintes configurações no `appsettings.json` ou via **Variáveis de Ambiente**:
+Antes de executar, vocÃª **deve** garantir que as credenciais do ambiente estÃ£o configuradas. O projeto lÃª as seguintes configuraÃ§Ãµes no `appsettings.json` ou via **VariÃ¡veis de Ambiente**:
 
-| Configuração | Descrição | Exemplo (*appsettings.json*) |
+| ConfiguraÃ§Ã£o | DescriÃ§Ã£o | Exemplo (*appsettings.json*) |
 | :--- | :--- | :--- |
-| **`AWS:AccessKey`** | Chave de acesso do usuário AWS com permissão (ex: S3 e SQS). | `SUA_ACCESS_KEY` |
-| **`AWS:SecretKey`** | Chave secreta do usuário AWS. | `SUA_SECRET_KEY` |
-| **`AWS:Region`** | Região AWS onde estão os serviços. | `us-east-2` |
+| **`ConnectionStrings:SqlServerConnection`** | String de conexÃ£o completa para o SQL Server. | `Server=...,Database=...,User Id=...,Password=...` |
+| **`AWS:AccessKey`** | Chave de acesso do usuÃ¡rio AWS com permissÃ£o (ex: S3 e SQS). | `SUA_ACCESS_KEY` |
+| **`AWS:SecretKey`** | Chave secreta do usuÃ¡rio AWS. | `SUA_SECRET_KEY` |
+| **`AWS:Region`** | RegiÃ£o AWS onde estÃ£o os serviÃ§os. | `us-east-2` |
 | **`AWS:BucketName`** | Nome do bucket S3 para armazenamento dos XMLs. | `xml-fiscais` |
 
 -----
 
-## ?? Execução Local
+## ğŸš€ ExecuÃ§Ã£o Local
 
 
 
-  * **Navegue até o diretório do projeto principal (`ConsumerWorker`):**
+  * **Navegue atÃ© o diretÃ³rio do projeto principal (`ConsumerWorker`):**
 
     ```bash
     cd SiegWorker/Sieg.ConsumerWorker
     ```
 
-  * **Restaure as dependências e faça o build:**
+  * **Restaure as dependÃªncias e faÃ§a o build:**
 
     ```bash
     dotnet build
@@ -96,19 +97,19 @@ Antes de executar, você **deve** garantir que as credenciais do ambiente estão c
     dotnet run
     ```
 
-O microserviço será iniciado e começará a escutar por mensagens de documentos fiscais na *queue* do RabbitMQ configurada.
+O microserviÃ§o serÃ¡ iniciado e comeÃ§arÃ¡ a escutar por mensagens de documentos fiscais na *queue* do RabbitMQ configurada.
 
 -----
 
 
-## ?? Próximos Passos e Possíveis Melhorias
+## ğŸ’¡ PrÃ³ximos Passos e PossÃ­veis Melhorias
 
-Com a arquitetura do **`SiegWorker`** (consumidor) definida e a **`Sieg.Api`** (produtor) existente, os próximos passos visam aprimorar a qualidade do código, a segurança e a automação do ciclo de vida do projeto para a conclusão completa do Desafio Técnico:
+Com a arquitetura do **`SiegWorker`** (consumidor) definida e a **`Sieg.Api`** (produtor) existente, os prÃ³ximos passos visam aprimorar a qualidade do cÃ³digo, a seguranÃ§a e a automaÃ§Ã£o do ciclo de vida do projeto para a conclusÃ£o completa do Desafio TÃ©cnico:
 
-| Item | Ação Necessária | Notas |
+| Item | AÃ§Ã£o NecessÃ¡ria | Notas |
 | :--- | :--- | :--- |
-| **Testes Unitários/Integração** | Implementar testes nas camadas **`Domain`**, **`Application`** e **`Infrastructure`** usando **NUnit** (e bibliotecas auxiliares como `FluentAssertions`). | Essencial para garantir a qualidade, robustez e a correta aplicação da lógica de idempotência. |
-| **Segurança e Configuração** | Mudar o consumo de credenciais (SQL Server, AWS) de `appsettings.json` para **`.NET User Secrets`** (ambiente local) e **Secrets Manager/Variáveis de Ambiente** (CI/CD). | **Priorizar a remoção de chaves** do arquivo de configuração para aumentar a segurança.  |
-| **CI/CD Básico** | Implementar um *pipeline* de Integração Contínua (CI) e Entrega Contínua (CD) (Ex: GitHub Actions, GitLab CI). | O CI deve rodar os testes e garantir que o código *builda*. O CD pode focar apenas no *deployment* do `SiegWorker`. |
-| **Teste de Carga** (Opcional) | Utilizar **NBomber** ou **k6** para simular o tráfego de ingestão de XMLs (na `Sieg.Api`) e testar a capacidade de processamento do `SiegWorker`. | Medir desempenho sob pressão e identificar *bottlenecks* no consumidor e no SQL Server. |
-| **Teste de Arquitetura** (Opcional) | Usar ferramentas como **NetArchTest** para reforçar a separação de responsabilidades e regras de dependência entre as camadas (ex: `Application` não pode depender de `Infrastructure`). | Garante a integridade da Clean Architecture ao longo do tempo. |
+| **Testes UnitÃ¡rios/IntegraÃ§Ã£o** | Implementar testes nas camadas **`Domain`**, **`Application`** e **`Infrastructure`** usando **NUnit** (e bibliotecas auxiliares como `FluentAssertions`). | Essencial para garantir a qualidade, robustez e a correta aplicaÃ§Ã£o da lÃ³gica de idempotÃªncia. |
+| **SeguranÃ§a e ConfiguraÃ§Ã£o** | Mudar o consumo de credenciais (SQL Server, AWS) de `appsettings.json` para **`.NET User Secrets`** (ambiente local) e **Secrets Manager/VariÃ¡veis de Ambiente** (CI/CD). | **Priorizar a remoÃ§Ã£o de chaves** do arquivo de configuraÃ§Ã£o para aumentar a seguranÃ§a.  |
+| **CI/CD BÃ¡sico** | Implementar um *pipeline* de IntegraÃ§Ã£o ContÃ­nua (CI) e Entrega ContÃ­nua (CD) (Ex: GitHub Actions, GitLab CI). | O CI deve rodar os testes e garantir que o cÃ³digo *builda*. O CD pode focar apenas no *deployment* do `SiegWorker`. |
+| **Teste de Carga** (Opcional) | Utilizar **NBomber** ou **k6** para simular o trÃ¡fego de ingestÃ£o de XMLs (na `Sieg.Api`) e testar a capacidade de processamento do `SiegWorker`. | Medir desempenho sob pressÃ£o e identificar *bottlenecks* no consumidor e no SQL Server. |
+| **Teste de Arquitetura** (Opcional) | Usar ferramentas como **NetArchTest** para reforÃ§ar a separaÃ§Ã£o de responsabilidades e regras de dependÃªncia entre as camadas (ex: `Application` nÃ£o pode depender de `Infrastructure`). | Garante a integridade da Clean Architecture ao longo do tempo. |
