@@ -21,7 +21,7 @@ O projeto é estruturado em camadas seguindo a **Clean Architecture** para garan
 | **Application** | Casos de uso (**Commands/Handlers**), validações e DTOs. | Orquestra a persistência e a lógica de processamento. |
 | **Infrastructure** | Persistência (**EF Core**), repositórios e **Unit of Work**. | Implementa acesso ao SQL Server e EF Core. |
 | **IoC** | Registro de dependências e *Composition Root*. | Configuração central de dependências. |
-| **ConsumerWorker** | Worker que consome mensagens do **RabbitMQ** e orquestra o processamento. | Implementa a Resiliência e Idempotência (itens 7 e 8). |
+| **ConsumerWorker** | Worker que consome mensagens do **RabbitMQ** e orquestra o processamento. | Implementa a Resiliência e Idempotência. |
 
 -----
 
@@ -32,7 +32,7 @@ O projeto é estruturado em camadas seguindo a **Clean Architecture** para garan
 **Motivos para a Escolha:**
 
   * **Integridade e Transações:** Essencial para operações críticas como *upsert* de documentos e atualizações consistentes, garantindo **Atomicidade** e **Isolamento** (ACID).
-  * **Modelagem Relacional para Consultas:** A natureza tabular dos documentos fiscais e a necessidade de consulta por múltiplos filtros (`CNPJ`, `UF`, `Data`, `Chave do Documento` - *Item 4 do Desafio*) são ideais para índices e *queries* eficientes em SQL Server.
+  * **Modelagem Relacional para Consultas:** A natureza tabular dos documentos fiscais e a necessidade de consulta por múltiplos filtros (`CNPJ`, `UF`, `Data`, `Chave do Documento`) são ideais para índices e *queries* eficientes em SQL Server.
   * **Ecossistema .NET Maduro:** Suporte robusto e otimizado via **EF Core / Migrations**.
 
 ### 2\. Idempotência e Reprocessamento
@@ -59,7 +59,7 @@ O projeto é estruturado em camadas seguindo a **Clean Architecture** para garan
 
 ## ✅ Requisitos e Setup
 
-  * **`.NET SDK 8+`** 
+  * **`.NET SDK 9`** 
   * **SQL Server** e **RabbitMQ** já provisionados na AWS (endpoints acessíveis pela rede do worker, utilizando configurações/variáveis de ambiente).
 ### ⚠️ Configuração de Acesso (Credenciais)
 
