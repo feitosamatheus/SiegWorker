@@ -22,16 +22,22 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureRepositories(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+
 builder.Services.AddMassTransit(x =>
 {
+    var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "b-ef391786-dc48-4b6f-b582-474e5f32078d.mq.us-east-2.on.aws";
+    var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5671");
+    var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "sieg-database-desafio";
+    var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "SiegDesafio123!";
+
     x.AddConsumer<DocumentoConsumer>();
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
-        cfg.Host("b-ef391786-dc48-4b6f-b582-474e5f32078d.mq.us-east-2.on.aws", 5671, "/", h =>
+        var rabbitUri = $"amqps://{rabbitUser}:{rabbitPass}@{rabbitHost}:{rabbitPort}/";
+
+        cfg.Host(new Uri(rabbitUri), h =>
         {
-            h.Username("sieg-database-desafio");
-            h.Password("SiegDesafio123!");
             h.UseSsl(s => s.Protocol = System.Security.Authentication.SslProtocols.Tls12);
         });
 

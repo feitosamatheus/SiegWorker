@@ -21,6 +21,8 @@ public class DocumentoConfiguration : IEntityTypeConfiguration<Documento>
         builder.HasMany(d => d.DocumentosFiscais).WithOne(df => df.Documento).HasForeignKey(df => df.DocumentoId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(d => d.NomeOriginalArquivo).HasDatabaseName("IX_Documento_NomeOriginalArquivo");
 
+        builder.HasIndex(d => d.XmlHash).IsUnique().HasDatabaseName("UX_Documento_XmlHash");
+
         builder.HasQueryFilter(df => !df.Excluido);
     }
 }
