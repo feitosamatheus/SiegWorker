@@ -11,4 +11,5 @@ namespace Sieg.Domain.Interfaces.Repositories;
 public interface IDocumentoFiscalRepository
 {
     Task AdicionarAsync(DocumentoFiscal documentoFiscal, CancellationToken cancellationToken);
+    Task<DocumentoFiscal?> ObterPorDocumentoIdAsync(Guid documentoId, CancellationToken cancellationToken);
 }

@@ -48,9 +48,17 @@ public sealed class ProcessarDocumentoHandler : IRequestHandler<ProcessarDocumen
                 return Unit.Value; 
             }
 
+            var documentoFiscalExistente = await _documentoFiscalRepository.ObterPorDocumentoIdAsync(documento.Id, cancellationToken);
+            if (documentoFiscalExistente != null)
+            {
+                _logger.LogInformation("Documento fiscal já existente para o documento {DocumentoId}. Ignorando reprocessamento.", request.DocumentoId);
+                return Unit.Value;
+            }
+
             var xmlConteudo = await _armazenamentoService.ObterArquivoComoStringAsync(documento.CaminhoXml);
             if(xmlConteudo == null)
                 throw new XmlInvalidoException("Conteúdo do XML não encontrado");
+
 
             using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xmlConteudo));
             var xmlDocument = await LerECriarXmlDocumentAsync(stream);
