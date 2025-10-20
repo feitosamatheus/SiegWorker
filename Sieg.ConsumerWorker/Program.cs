@@ -25,9 +25,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
-    var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "b-ef391786-dc48-4b6f-b582-474e5f32078d.mq.us-east-2.on.aws";
+    var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "b-2e244e53-f0ed-463a-a217-7bca0f99c319.mq.us-east-2.on.aws";
     var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5671");
-    var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "sieg-database-desafio";
+    var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "sieg-broker-desafio";
     var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "SiegDesafio123!";
 
     x.AddConsumer<DocumentoConsumer>();

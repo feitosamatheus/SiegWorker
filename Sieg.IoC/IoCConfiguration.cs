@@ -61,7 +61,7 @@ public static class IoCConfiguration
         services.AddDefaultAWSOptions(awsOptions);
         services.AddAWSService<IAmazonS3>();
 
-        var bucketName = configuration["AWS:BucketName"] ?? "xml-fiscais";
+        var bucketName = configuration["AWS:BucketName"] ?? "sieg-xml-fiscais";
         services.AddSingleton<IArmazenamentoService>(sp =>
             new ArmazenamentoService(sp.GetRequiredService<IAmazonS3>(), bucketName)
         );
